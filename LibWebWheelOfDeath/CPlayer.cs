@@ -52,8 +52,8 @@ namespace LibWheelOfDeath
 
         public override void Create()
         {
-            base.Create();
 
+            base.Create();
             FkAccountId = Id;
 
             CommandText = $@"
@@ -63,7 +63,7 @@ namespace LibWheelOfDeath
             Parameters.AddWithValue("@pFkAccountId", FkAccountId);
             Parameters.AddWithValue("@pUsername", Username);
             Validate();
-            base.Create(false);
+            Create(false);
             
         }
 
@@ -154,10 +154,15 @@ namespace LibWheelOfDeath
             {
                 message += "Username min length 2 characters Max length 100";
             }
+            if (!PasswordValidate(out string passwordMessage))
+            {
+                message += passwordMessage;
+            }
             if (message.Length > 0)
             {
                 throw new CEntityException(message);
             }
+            
         }
         public override string ToString()
         {

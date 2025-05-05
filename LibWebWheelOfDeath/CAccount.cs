@@ -57,7 +57,7 @@ namespace Assessment
             Parameters.AddWithValue("@pPassword", Password );
             Parameters.AddWithValue("@pIsActive", IsActive);
            
-            base.Create();
+            base.Create(true);
         }
 
         public override int Update()

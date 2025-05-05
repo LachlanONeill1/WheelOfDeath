@@ -29,6 +29,7 @@ export class CWheelGame extends CTimer {
     #balloons = new Map();
     #animationClass;
     
+    
 
     constructor(duration = 30000, minBalloons = 10, maxBalloons = 16,
                 maxThrows = 0, showPopups = true) {
@@ -53,17 +54,14 @@ export class CWheelGame extends CTimer {
         this.#showPopups = showPopups;
 
         if (this.#showPopups) {
-            this.player = new CPlayerModal('#modal-player-id', false, false)
-            
-            this.player.startupCallbackFunction = () => {
-                document.dispatchEvent(new CustomEvent('user-begun-game', {
-                    bubbles: true,
-                    detail: {
-                        message: "User Started Game"
-                    }
-                    
-                }));
-                
+            this.player = new CPlayerModal('#modal-player-id', false, false)       
+                this.player.startupCallbackFunction = () => {
+                    document.dispatchEvent(new CustomEvent('user-begun-game', {
+                        bubbles: true,
+                        detail: {
+                            message: "User Started Game"
+                        }
+                    }));           
             }
            
         }
@@ -105,10 +103,10 @@ export class CWheelGame extends CTimer {
 
             if (this.isRunning) {
                 this.#gameOver(EnumGameStatus.Stopped);
-            } else if(this.#showPopups) {
-                 this.start()                                      
-            } else {  
-                this.start() 
+            } else if (this.#showPopups) {
+                this.start()
+            } else {              
+                this.start();            
             }
         });
         this.#selectGame.addEventListener('click', event => {

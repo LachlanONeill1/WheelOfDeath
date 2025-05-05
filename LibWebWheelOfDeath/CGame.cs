@@ -16,7 +16,7 @@ namespace LibWheelOfDeath
         public short MinBalloons { get; set; } = 0;
         public short MaxBalloons { get; set; } = 0;
         public short MaxMisses { get; set; } = 0;
-        public short MaxDuration { get; set; } = 0;
+        public long MaxDuration { get; set; } = 0;
         public short MaxThrows { get; set; } = 0;
         public DateTime GameDateTime { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
@@ -115,7 +115,7 @@ namespace LibWheelOfDeath
             game.MinBalloons = (short)reader["MinBalloons"];
             game.MaxBalloons = (short)reader["MaxBalloons"];
             game.MaxMisses = (short)reader["MaxMisses"];
-            game.MaxDuration = (short)reader["MaxDuration"];
+            game.MaxDuration = (long)reader["MaxDuration"];
             game.GameDateTime = (DateTime)reader["GameDateTime"];
             game.MaxThrows = (short)reader["MaxThrows"];
             game.IsActive = (bool)reader["IsActive"];

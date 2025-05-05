@@ -6,130 +6,127 @@
 @using System.Threading;
 
 @{
-    
-        Page.Title = "Wheel Of Death";
-        Layout = "~/Shared/_Layout1.cshtml";
 
-        #region Declarations
-        string difficultyModalClass = "hidden";
-        string loginModalClass = "";
-        string signupModalClass = "hidden";
+    Page.Title = "Wheel Of Death";
+    Layout = "~/Shared/_Layout1.cshtml";
 
-        string firstName = string.Empty;
-        string lastName = string.Empty;
-        string userName = string.Empty;
+    #region Declarations
+    string difficultyModalClass = "hidden";
+    string loginModalClass = "";
+    string signupModalClass = "hidden";
 
-        CGame gameSettings = new CGame();
+    string firstName = string.Empty;
+    string lastName = string.Empty;
+    string userName = string.Empty;
 
-        short duration = 10000;
-        short min_balloons = 1;
-        short max_balloons = 1;
-        short max_throws = 1;
+    CGame gameSettings = new CGame();
 
-
-        #endregion
-
-        #region QueryRequest
-        System.Collections.Specialized.NameValueCollection queryString = Request.QueryString;
-        string queryId = queryString.Get("Id");
-        #endregion
+    long duration = 10000;
+    short min_balloons = 1;
+    short max_balloons = 1;
+    short max_throws = 1;
 
 
-        CPlayer player;
+    #endregion
 
-        if (Session["LoggedPlayer"] != null)
-        {
-            player = (CPlayer)Session["LoggedPlayer"];
-            if (player.FkAccountId == 0 && Session["PlayerAccountId"] != null)
-            {
-                player.FkAccountId = (long)Session["PlayerAccountId"];
+    #region QueryRequest
+    System.Collections.Specialized.NameValueCollection queryString = Request.QueryString;
+    string queryId = queryString.Get("Id");
+    #endregion
 
-            }
-        }
-        else
-        {
-            player = new CPlayer();
-            Session["LoggedPlayer"] = player;
-        }
 
-        if (Session["PlayerAccountId"] != null)
+    CPlayer player;
+
+    if (Session["LoggedPlayer"] != null)
+    {
+        player = (CPlayer)Session["LoggedPlayer"];
+        if (player.FkAccountId == 0 && Session["PlayerAccountId"] != null)
         {
             player.FkAccountId = (long)Session["PlayerAccountId"];
 
-
         }
+    }
+    else
+    {
+        player = new CPlayer();
+        Session["LoggedPlayer"] = player;
+    }
 
-        if (player.FkAccountId > 0L)
+    if (Session["PlayerAccountId"] != null)
+    {
+        player.FkAccountId = (long)Session["PlayerAccountId"];
+
+
+    }
+
+    if (player.FkAccountId > 0L)
+    {
+        loginModalClass = "hidden";
+    }
+
+    if (queryId != null)
+    {
+        gameSettings.Id = int.Parse(queryId);
+        DataTable gamesTable = LibWebWheelOfDeath.CQuery.difficultyGameOptGroup.Fetch<DataTable>();
+        DataRow[] Rows = gamesTable.Select($"Id = {gameSettings.Id}");
+        player.Username = Session["PlayerUsername"].ToString();
+        if (Rows.Length > 0)
         {
+            DataRow gameRow = Rows[0];
+            duration = Convert.ToInt64(gameRow["MaxDuration"]) * 1000;
+            min_balloons = Convert.ToInt16(gameRow["MinBalloons"]);
+            max_balloons = Convert.ToInt16(gameRow["MaxBalloons"]);
+            max_throws = Convert.ToInt16(gameRow["MaxThrows"]);
+        }
+    }
+
+    if (Request["btnBeginGame"] != null)
+    {
+        try
+        {
+            userName = Request["txtUsername"];
+            string password = Request["txtPassword"];
+            player = CPlayer.Login(userName, password);
+            Session["LoggedPlayer"] = player;
+            Session["PlayerUsername"] = userName;
+            Session["PlayerAccountId"] = player.FkAccountId;
             loginModalClass = "hidden";
+
         }
-
-        if (queryId != null)
+        catch (Exception E)
         {
-            gameSettings.Id = int.Parse(queryId);
-            DataTable gamesTable = LibWebWheelOfDeath.CQuery.difficultyGameOptGroup.Fetch<DataTable>();
-            DataRow[] Rows = gamesTable.Select($"Id = {gameSettings.Id}");
 
-            if (Rows.Length > 0)
-            {
-                DataRow gameRow = Rows[0];
-                duration = Convert.ToInt16(gameRow["MaxDuration"]);
-                min_balloons = Convert.ToInt16(gameRow["MinBalloons"]);
-                max_balloons = Convert.ToInt16(gameRow["MaxBalloons"]);
-                max_throws = Convert.ToInt16(gameRow["MaxThrows"]);
-            }
+            @Helpers.ExceptionHandler(E, 5000)
         }
-
-        if (Request["modal-button"] != null)
+    }
+    if (Request["btnCreateAccount"] != null)
+    {
+        try
         {
-            if (Session["PlayerUsername"] != null)
-            {
-                player.Username = Session["PlayerUsername"].ToString();
-            }
+
+            firstName = Request["txtPlayerFirstName"];
+            lastName = Request["txtPlayerLastName"];
+            userName = Request["txtUsername"];
+            player.FirstName = firstName;
+            player.LastName = lastName;
+            player.Username = userName;
+            player.Password = Request["txtPassword"];
+            player.Create();
+            Session["LoggedPlayer"] = player;
+            Session["PlayerAccountId"] = player.FkAccountId;
+            player.FirstName = "";
+            player.LastName = "";
+            player.Username = "";
+            player.Password = "";
+            player.FkAccountId = 0;
+
+        }
+        catch (Exception E)
+        {
+            @Helpers.ExceptionHandler(E, 5000)
             loginModalClass = "hidden";
-        }
+            signupModalClass = "";
 
-        if (Request["btnBeginGame"] != null)
-        {
-            try
-            {
-                userName = Request["txtUsername"];
-                string password = Request["txtPassword"];
-                player = CPlayer.Login(userName, password);
-                Session["LoggedPlayer"] = player;
-                Session["PlayerUsername"] = userName;
-                Session["PlayerAccountId"] = player.FkAccountId;
-                loginModalClass = "hidden";
-            }
-            catch (Exception E)
-            {
-
-                @Helpers.ExceptionHandler(E, 5000)
-            }
-        }
-        if (Request["btnCreateAccount"] != null)
-        {
-            try
-            {
-                firstName = Request["txtPlayerFirstName"];
-                lastName = Request["txtPlayerLastName"];
-                userName = Request["txtUsername"];
-
-
-                player.FirstName = firstName;
-                player.LastName = lastName;
-                player.Username = userName;
-                player.Password = Request["txtPassword"];
-                player.Create();
-                Session["LoggedPlayer"] = player;
-                Session["PlayerAccountId"] = player.FkAccountId;
-
-            }
-            catch (Exception E)
-            {
-                loginModalClass = "hidden";
-                signupModalClass = "";
-                @Helpers.ExceptionHandler(E, 5)
         }
     }
     if (Request["btnLogOut"] != null)
@@ -147,265 +144,265 @@
 
 
 
-    }
+}
 
-    <body class="shadow-text">
-        <header>
-            <img class="logo"
-                 src="~/pics/Wheel_of_Death_Logo.png"
-                 alt="Wheel of Death"
-                 height="159"
-                 width="667" />
-        </header>
+<body class="shadow-text">
+    <header>
+        <img class="logo"
+             src="~/pics/Wheel_of_Death_Logo.png"
+             alt="Wheel of Death"
+             height="159"
+             width="667" />
+    </header>
 
-        <main>
-            <div>
-                <div id="knife-gallery"></div>
+    <main>
+        <div>
+            <div id="knife-gallery"></div>
 
-                <img src="~/pics/Left_Thrower.png"
-                     class="knife_thrower"
-                     alt="Knife thrower on left"
-                     height="2566"
-                     width="1887" />
+            <img src="~/pics/Left_Thrower.png"
+                 class="knife_thrower"
+                 alt="Knife thrower on left"
+                 height="2566"
+                 width="1887" />
 
-                <div class="wheel-outer-frame">
-                    <figure class="wheel-inner-frame">
-                        <img id="wheel"
-                             src="~/pics/Wheel.jpg"
-                             alt="Wheel of Death"
-                             height="2820"
-                             width="2820" />
+            <div class="wheel-outer-frame">
+                <figure class="wheel-inner-frame">
+                    <img id="wheel"
+                         src="~/pics/Wheel.jpg"
+                         alt="Wheel of Death"
+                         height="2820"
+                         width="2820" />
 
-                        <div id="victim">
-                            <img class="big-knife hidden" src="~/pics/Knife-Angled.png" alt="killer knife" />
-                        </div>
-                        <div id="below-the-belt">&nbsp;</div>
-                    </figure>
+                    <div id="victim">
+                        <img class="big-knife hidden" src="~/pics/Knife-Angled.png" alt="killer knife" />
+                    </div>
+                    <div id="below-the-belt">&nbsp;</div>
+                </figure>
 
-                </div>
-
-                <img src="~/pics/Right_Thrower.png"
-                     class="knife_thrower"
-                     alt="Knife thrower on right"
-                     height="2669"
-                     width="1648" />
             </div>
 
-            <div>
-            </div>
-            <form method="post" style="position: absolute; top: 20px; right: 1800px; z-index: 100;">
-                <button id="btnLogOut" name="btnLogOut" type="submit" class="ornate">Logout</button>
-                
-            </form>
-            <form method="post" style="position: absolute; top: 20px; right: 1700px; z-index: 100;">
-                <button id="btnEditAccount" name="btnEditAccount" type="submit" class="ornate">Edit Account</button>
-            </form>
-            
-                <button id="btnSelectGame" name="btnSelectGame" type="button" class="ornate rounded">Select Game</button>
-                <<button id="btnStartStop" name="btnStartStop" type="submit" class="ornate rounded">Start</button>
-                
+            <img src="~/pics/Right_Thrower.png"
+                 class="knife_thrower"
+                 alt="Knife thrower on right"
+                 height="2669"
+                 width="1648" />
+        </div>
+        <form method="post" style="position: absolute; top: 20px; right: 1500px; z-index: 100;">
+            <button id="btnLogOut" name="btnLogOut" type="submit" class="ornate">Logout</button>
 
-                <div class="time-panel" id="time-panel-1">
+        </form>
+        <form method="post" style="position: absolute; top: 20px; right: 1400px; z-index: 100;">
+            <button id="btnEditAccount" name="btnEditAccount" type="submit" class="ornate">Edit Account</button>
+        </form>
 
-                    <span class="countdown-max-seconds"></span>
-                    <meter class="countdown-gauge" min="0" value="0" max="30000"></meter>
-                    <span>0</span>
-                    <span class="countdown-remaining"></span>
-                </div>
+        <button id="btnSelectGame" name="btnSelectGame" type="button" class="ornate rounded">Select Game</button>
+        <button id="btnStartStop" name="btnStartStop" type="submit" class="ornate rounded">Start</button>
 
-                <h2 id="scorePanel">&nbsp;</h2>
 
-                <div id="statusPanel" class="hidden stopped">&nbsp;</div>
-        </main>
+        <div class="time-panel" id="time-panel-1">
 
-        <footer>
-            hello @player.Username Id: @gameSettings.Id Player Id: @player.FkAccountId;
-        </footer>
-
-        <!-- The following div elements act as a modal canvas for pop-up messages -->
-        <div id="modal-message-id" class="modal-canvas hidden">
-            <div class="main-panel modal-error">
-                <span class="close-popup">&#10006;</span>
-                <p class="message-display">&nbsp;</p>
-            </div>
+            <span class="countdown-max-seconds"></span>
+            <meter class="countdown-gauge" min="0" value="0" max="30000"></meter>
+            <span>0</span>
+            <span class="countdown-remaining"></span>
         </div>
 
+        <h2 id="scorePanel">&nbsp;</h2>
 
-        <div id="modal-player-id" class="modal-canvas @loginModalClass">
-            <div class="main-panel modal-player">
-                <span style="display: none" class="close-popup">&#10006;</span>
-                <form method="post">
-                    <fieldset>
-                        <legend>Do You Have What It Takes?</legend>
+        <div id="statusPanel" class="hidden stopped">&nbsp;</div>
+    </main>
 
-                        <fieldset class="borderless">
-                            <label for="txtUsername">Username:</label>
-                            <input type="text"
-                                   name="txtUsername"
-                                   id="txtUsername"
-                                   placeholder="[Enter Username]"
-                                   required="required" />
-                        </fieldset>
+    <footer>
+        hello @player.Username Game Id: @gameSettings.Id Player Id: @player.FkAccountId;
+    </footer>
 
-                        <fieldset class="borderless">
-                            <label for="txtPassword">Password:</label>
-                            <input type="text"
-                                   name="txtPassword"
-                                   id="txtPassword"
-                                   placeholder="[Enter Password]"
-                                   required="required" />
-                        </fieldset>
-
-                        <button type="submit" id="btnOpenSignUp" name="btnOpenSignUp" class="ornate">Create Account</button>
-                        <button type="submit" name="btnBeginGame" id="btnBeginGame" class="ornate">Login</button>
-                    </fieldset>
-                </form>
-            </div>
+    <!-- The following div elements act as a modal canvas for pop-up messages -->
+    <div id="modal-message-id" class="modal-canvas hidden">
+        <div class="main-panel modal-error">
+            <span class="close-popup">&#10006;</span>
+            <p class="message-display">&nbsp;</p>
         </div>
-
-        <div id="modal-signup" class="modal-canvas @signupModalClass">
-            <div class="signup-panel modal-player">
-                <span style="display: none" class="close-popup">&#10006;</span>
-                <form method="post" asp-page-handler="SignUp">
-                    <fieldset>
-                        <legend>Do You Have What It Takes?</legend>
-                        <input type="hidden" name="CurrentModal" id="CurrentModal" />
-                        <fieldset class="borderless">
-                            <label for="txtPlayerFirstName">First Name:</label>
-                            <input type="text"
-                                   name="txtPlayerFirstName"
-                                   id="txtPlayerFirstName"
-                                   placeholder="[Enter First Name]"
-                                   required="required"
-                                   value="@firstName" />
-                        </fieldset>
+    </div>
 
 
-                        <fieldset class="borderless">
-                            <label for="txtPlayerLastName">Last Name:</label>
-                            <input type="text"
-                                   name="txtPlayerLastName"
-                                   id="txtPlayerLastName"
-                                   placeholder="[Enter Last Name]"
-                                   required="required"
-                                   value="@lastName" />
-                        </fieldset>
+    <div id="modal-player-id" class="modal-canvas @loginModalClass">
+        <div class="main-panel modal-player">
+            <span style="display: none" class="close-popup">&#10006;</span>
+            <form method="post">
+                <fieldset>
+                    <legend>Do You Have What It Takes?</legend>
 
-
-                        <fieldset class="borderless">
-                            <label for="txtUsername">Username:</label>
-                            <input type="text"
-                                   name="txtUsername"
-                                   id="txtUsername"
-                                   placeholder="[Enter Username]"
-                                   required="required"
-                                   value="@userName" />
-                        </fieldset>
-
-                        <fieldset class="borderless">
-                            <label for="txtPassword">Password:</label>
-                            <input type="text"
-                                   name="txtPassword"
-                                   id="txtPassword"
-                                   placeholder="[Enter Password]"
-                                   required="required" />
-                        </fieldset>
-
-                        <button type="submit" id="btnCreateAccount" name="btnCreateAccount" class="ornate">Sign Up!</button>
-                        <button type="button" name="btnBack" id="btnBack" class="ornate">Back</button>
-                    </fieldset>
-                </form>
-            </div>
-        </div>
-
-        <div id="modal-winner-id" class="modal-canvas @difficultyModalClass">
-            <div class="main-panel modal-winner">
-                <form>
-                    <fieldset>
-                        <legend>Congratulations - You Won!</legend>
-
-                        <label for="numElapsedTime">Your Time (sec):</label>
-                        <output name="numElapsedTime" id="numElapsedTime"></output>
-
-                        <label for="numHits">Hits:</label>
-                        <output name="numHits" id="numHits"></output>
-
-                        <label for="numMisses">Misses: @max_throws</label>
-                        <output name="numMisses" id="numMisses"></output>
-
-                        <output name="txtMiscMessage"></output>
-                    </fieldset>
-                </form>
-            </div>
-        </div>
-
-        <div id="modal-difficulty-id" class="hidden">
-            <div class="main-panel modal-winner">
-                <span class="close-popup"> &#10006;</span>
-                <form method="post">
                     <fieldset class="borderless">
-                        <select name="lstDifficulty" id="lstDifficulty" class="Difficulties" size="10">
-                            @{
-                                DataTable table = LibWebWheelOfDeath.CQuery.difficultyGameOptGroup.Fetch<DataTable>();
-                                long priorFkDifficultyId = -1;
-                                int i = 0;
-                            }
-                            @while (i < table.Rows.Count)
-                            {
-                                DataRow row = table.Rows[i];
-                                if ((long)row["FkDifficultyId"] != priorFkDifficultyId)
-                                {
-                                    priorFkDifficultyId = row.Field<long>("FkDifficultyId");
-                                    string difficultyName = row.Field<string>("DifficultyName");
-                                    <optgroup label="@difficultyName" class="DifficultyGroup">
-
-                                        @do
-                                        {
-                                            long gameId = row.Field<long>("Id");
-                                            string gameName = row.Field<string>("Name");
-                                            <option name="txtGameOption" value="@gameId">@gameName</option>
-                                            i = i + 1;
-                                            if (i >= table.Rows.Count)
-                                            {
-                                                break;
-                                            }
-                                            row = table.Rows[i];
-                                            long nextFkDifficultyId = row.Field<long>("FkDifficultyId");
-
-                                        } while (priorFkDifficultyId == row.Field<long>("FkDifficultyId"));
-                                    </optgroup>
-                                }
-
-                            }
-                        </select>
+                        <label for="txtUsername">Username:</label>
+                        <input type="text"
+                               name="txtUsername"
+                               id="txtUsername"
+                               placeholder="[Enter Username]"
+                               required="required" />
                     </fieldset>
-                    <button type="submit" name="modal-button" id="modal-button" class="modal-button">Ok!</button>
-                </form>
-            </div>
+
+                    <fieldset class="borderless">
+                        <label for="txtPassword">Password:</label>
+                        <input type="text"
+                               name="txtPassword"
+                               id="txtPassword"
+                               placeholder="[Enter Password]"
+                               required="required" />
+                    </fieldset>
+
+                    <button type="submit" id="btnOpenSignUp" name="btnOpenSignUp" class="ornate">Create Account</button>
+                    <button type="submit" name="btnBeginGame" id="btnBeginGame" class="ornate">Login</button>
+                </fieldset>
+            </form>
         </div>
+    </div>
+
+    <div id="modal-signup" class="modal-canvas @signupModalClass">
+        <div class="signup-panel modal-player">
+            <span style="display: none" class="close-popup">&#10006;</span>
+            <form method="post" asp-page-handler="SignUp">
+                <fieldset>
+                    <legend>Do You Have What It Takes?</legend>
+                    <input type="hidden" name="CurrentModal" id="CurrentModal" />
+                    <fieldset class="borderless">
+                        <label for="txtPlayerFirstName">First Name:</label>
+                        <input type="text"
+                               name="txtPlayerFirstName"
+                               id="txtPlayerFirstName"
+                               placeholder="[Enter First Name]"
+                               required="required"
+                               value="@firstName" />
+                    </fieldset>
 
 
-        <script type="module">
+                    <fieldset class="borderless">
+                        <label for="txtPlayerLastName">Last Name:</label>
+                        <input type="text"
+                               name="txtPlayerLastName"
+                               id="txtPlayerLastName"
+                               placeholder="[Enter Last Name]"
+                               required="required"
+                               value="@lastName" />
+                    </fieldset>
+
+
+                    <fieldset class="borderless">
+                        <label for="txtUsername">Username:</label>
+                        <input type="text"
+                               name="txtUsername"
+                               id="txtUsername"
+                               placeholder="[Enter Username]"
+                               required="required"
+                               value="@userName" />
+                    </fieldset>
+
+                    <fieldset class="borderless">
+                        <label for="txtPassword">Password:</label>
+                        <input type="text"
+                               name="txtPassword"
+                               id="txtPassword"
+                               placeholder="[Enter Password]"
+                               required="required" />
+                    </fieldset>
+
+                    <button type="submit" id="btnCreateAccount" name="btnCreateAccount" class="ornate">Sign Up!</button>
+                    <button type="button" name="btnBack" id="btnBack" class="ornate">Back</button>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-winner-id" class="modal-canvas @difficultyModalClass">
+        <div class="main-panel modal-winner">
+            <form>
+                <fieldset>
+                    <legend>Congratulations - You Won!</legend>
+
+                    <label for="numElapsedTime">Your Time (sec):</label>
+                    <output name="numElapsedTime" id="numElapsedTime"></output>
+
+                    <label for="numHits">Hits:</label>
+                    <output name="numHits" id="numHits"></output>
+
+                    <label for="numMisses">Misses: @max_throws</label>
+                    <output name="numMisses" id="numMisses"></output>
+
+                    <output name="txtMiscMessage"></output>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-difficulty-id" class="hidden">
+        <div class="main-panel modal-winner">
+            <span id="CloseOptions" class="close-popup"> &#10006;</span>
+            <form method="post">
+                <fieldset class="borderless">
+                    <select name="lstDifficulty" id="lstDifficulty" class="Difficulties" size="10">
+                        @{
+                            DataTable table = LibWebWheelOfDeath.CQuery.difficultyGameOptGroup.Fetch<DataTable>();
+                            long priorFkDifficultyId = -1;
+                            int i = 0;
+                        }
+                        @while (i < table.Rows.Count)
+                        {
+                            DataRow row = table.Rows[i];
+                            if ((long)row["FkDifficultyId"] != priorFkDifficultyId)
+                            {
+                                priorFkDifficultyId = row.Field<long>("FkDifficultyId");
+                                string difficultyName = row.Field<string>("DifficultyName");
+                                <optgroup label="@difficultyName" class="DifficultyGroup">
+
+                                    @do
+                                    {
+                                        long gameId = row.Field<long>("Id");
+                                        string gameName = row.Field<string>("Name");
+                                        <option name="txtGameOption" value="@gameId">@gameName</option>
+                                        i = i + 1;
+                                        if (i >= table.Rows.Count)
+                                        {
+                                            break;
+                                        }
+                                        row = table.Rows[i];
+                                        long nextFkDifficultyId = row.Field<long>("FkDifficultyId");
+
+                                    } while (priorFkDifficultyId == row.Field<long>("FkDifficultyId"));
+                                </optgroup>
+                            }
+
+                        }
+                    </select>
+                </fieldset>
+                <button type="submit" name="modal-button" id="modal-button" class="modal-button">Ok!</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script type="module">
             'use strict';
-            
+
             import { CWheelGame } from '../js/CWheelGame.js';
             import { CMessageModal } from '../js/CAppModals.js';
-           
+            
             let _game;
             _game = new CWheelGame(@duration, @min_balloons, @max_balloons, @max_throws, false);
             try {
                 document.getElementById('btnStartStop').addEventListener('click', function (event) {
+                    event.stopPropagation();
                     const urlParams = new URLSearchParams(window.location.search);
                     const gameId = urlParams.get('Id');
-
                     if (!gameId) {
+                        
                         event.preventDefault();
                         document.getElementById('btnStartStop').classList.add('hidden');
                         new CMessageModal('#modal-message-id').display("Please select a game difficulty first!", false, 5000);
-
+                        
                         document.getElementById('modal-difficulty-id').classList.remove('hidden');
                     }
+
                     else {
+                        document.getElementById('modal-difficulty-id').classList.add('hidden')
                         document.getElementById('btnStartStop').classList.remove('hidden')
                     }
                 });
@@ -416,26 +413,32 @@
                     console.log('Id Param Removed!')
 
                 });
-
-
-
-
+                document.getElementById('btnOpenSignUp').addEventListener('click', function (event) {
+                    event.preventDefault();
+                    document.getElementById('modal-player-id').classList.add('hidden');
+                    document.getElementById('modal-signup').classList.remove('hidden');
+                })
+                document.getElementById('btnBack').addEventListener('click', function (event) {
+                    document.getElementById('modal-signup').classList.add('hidden');
+                    document.getElementById('modal-player-id').classList.remove('hidden');
+                });
+                document.getElementById('CloseOptions').addEventListener('click', function (event) {
+                    document.getElementById('modal-difficulty-id').classList.add('hidden');
+                })
 
         const difficultyModal = document.getElementById('modal-difficulty-id')
         document.getElementById('modal-button').addEventListener('click', function (event) {
-        let selectedGameId = document.getElementById('lstDifficulty').value;
-        console.log("Selected Game ID:", selectedGameId);
-        difficultyModal.classList.add('hidden')
-            });
-            document
-                .getElementById('modal-difficulty-id').addEventListener('submit', event => {
+            let selectedGameId = document.getElementById('lstDifficulty').value;
+            console.log("Selected Game ID:", selectedGameId);
+            difficultyModal.classList.add('hidden');
+        });
+
+        document.getElementById('modal-difficulty-id').addEventListener('submit', event => {
             event.preventDefault();
             var selectedGameId = document.getElementById('lstDifficulty').value;
             var baseUrl = window.location.href.split('?')[0];
             window.location.href = baseUrl + '?Id=' + selectedGameId;
-
-
-        })
+    })
 
         console.log("Game settings from server:");
         console.log("Duration: @duration");
@@ -453,130 +456,135 @@
         new CMessageModal('#modal-message-id').display(e.message, false, 7000);
         }
 
-        </script>
-    </body>
-    <style>
-        select.Difficulties {
-            padding: 10px 20px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: #fff;
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            color: #333;
-            width: 100%;
-            box-sizing: border-box;
-            cursor: pointer;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    </script>
+</body>
+<style>
+    .close-popup{
+        cursor: pointer;
+    }
+    select.Difficulties {
+        padding: 10px 20px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #fff;
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        color: #333;
+        width: 100%;
+        box-sizing: border-box;
+        cursor: pointer;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        select.Difficulties:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
         }
 
-            select.Difficulties:focus {
-                border-color: #007bff;
-                box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-            }
-
-            select.Difficulties:hover {
-                border-color: #888;
-            }
+        select.Difficulties:hover {
+            border-color: #888;
+        }
 
 
-        optgroup.DifficultyGroup {
-            font-weight: bold;
-            color: #555;
+    optgroup.DifficultyGroup {
+        font-weight: bold;
+        color: #555;
+        background-color: #f8f8f8;
+        padding: 5px;
+        font-size: 14px;
+    }
+
+    option {
+        padding: 10px;
+        font-size: 16px;
+        background-color: #fff;
+        border: none;
+        color: #333;
+    }
+
+        option:hover {
+            background-color: #f0f0f0;
+        }
+
+        option:checked {
+            background-color: #007bff;
+            color: white;
+        }
+
+        option:disabled {
+            color: #ccc;
             background-color: #f8f8f8;
-            padding: 5px;
-            font-size: 14px;
         }
 
-        option {
-            padding: 10px;
-            font-size: 16px;
-            background-color: #fff;
-            border: none;
-            color: #333;
+    .modal-button {
+        background-image: linear-gradient(to bottom right,darkgreen, rgba(0, 135, 135, 1.8) );
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 20px;
+        width: 100%;
+        transition: background-color 0.3s ease;
+    }
+
+        .modal-button:hover {
+            background-color: #0056b3;
         }
 
-            option:hover {
-                background-color: #f0f0f0;
-            }
+    #btnLogOut {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+        background-image: linear-gradient(to bottom right, darkred, #990000);
+        color: white;
+        border: 2px solid #5c0000;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
 
-            option:checked {
-                background-color: #007bff;
-                color: white;
-            }
-
-            option:disabled {
-                color: #ccc;
-                background-color: #f8f8f8;
-            }
-
-        .modal-button {
-            background-image: linear-gradient(to bottom right,darkgreen, rgba(0, 135, 135, 1.8) );
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
-            width: 100%;
-            transition: background-color 0.3s ease;
+        #btnLogOut:hover {
+            background-image: linear-gradient(to bottom right, #990000, #5c0000);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
-            .modal-button:hover {
-                background-color: #0056b3;
-            }
-        #btnLogOut {
-            position: absolute;
-            top: 20px;
-            right:20px;
-            z-index: 100;
-            background-image: linear-gradient(to bottom right, darkred, #990000);
-            color: white;
-            border: 2px solid #5c0000;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        #btnLogOut:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
-            #btnLogOut:hover {
-                background-image: linear-gradient(to bottom right, #990000, #5c0000);
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-            }
+    #btnEditAccount {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        z-index: 100;
+        background-image: linear-gradient(to bottom right, darkred, #990000);
+        color: white;
+        border: 2px solid #5c0000;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
 
-            #btnLogOut:active {
-                transform: translateY(1px);
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-            }
-        #btnEditAccount {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            z-index: 100;
-            background-image: linear-gradient(to bottom right, darkred, #990000);
-            color: white;
-            border: 2px solid #5c0000;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        #btnEditAccount:hover {
+            background-image: linear-gradient(to bottom right, #990000, #5c0000);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
-            #btnEditAccount:hover {
-                background-image: linear-gradient(to bottom right, #990000, #5c0000);
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-            }
-
-            #btnEditAccount:active {
-                transform: translateY(1px);
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-            }
-    </style>
+        #btnEditAccount:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+</style>

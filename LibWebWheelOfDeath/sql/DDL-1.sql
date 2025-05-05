@@ -21,23 +21,26 @@ create table [tblAccount](
 create table [tblAdminType](
     [Id] bigint not null identity constraint [PkAdminType] primary key,
     [Name] nvarchar(255) not null,
-
+    constraint [AdminType_Name_Unique] unique([Name])
 );
 
 create table [tblPlayer](
     [FkAccountId] bigint not null constraint [PkPlayer] primary key constraint[FkPlayerAccount]foreign key references[tblAccount]([Id]),
     [Username] nvarchar(100) not null,
+    constraint [Player_Username_Unique] unique([Username])
 );
 
 create table [tblAdmin](
     [FkAccountId] bigint not null constraint [PkAdmin] primary key constraint [FkAdminAccount] foreign key references[tblAccount]([Id]),
     [FkAdminTypeId] bigint not null constraint [FkAdminType] foreign key references[tblAdminType]([Id]),
     [Username] nvarchar(100) not null,
+    constraint [Admin_Username_Unique] unique([Username])
 );
 create table [tblDifficulty](
     [Id] bigint not null identity constraint [PkDifficulty] primary key,
     [DifficultyType] nvarchar(255) not null,
-    [FkAdminId] bigint not null
+    [FkAdminId] bigint not null,
+    constraint [DifficultyType_Name_Unique] unique([DifficultyType])
 );
 create table [tblGame](
     [Id] bigint not null identity constraint [PkGame] primary key,
@@ -46,17 +49,19 @@ create table [tblGame](
     [FkDifficultyId] bigint not null constraint [FkGameDifficulty] foreign key references [tblDifficulty]([Id]),
     [MinBalloons] smallint not null,
     [MaxBalloons] smallint not null,
-    [MaxMisses] smallint not null,
+    [MaxMisses] bigint not null,
     [MaxDuration] smallint not null,
     [GameDateTime] datetime not null,
     [MaxThrows] smallint not null,
-    [IsActive] bit not null constraint [Game-IsActive-Default-True] default(1)
+    [IsActive] bit not null constraint [Game-IsActive-Default-True] default(1),
+    constraint [Game_Name_Unique] unique([Name])
 );
 
 create table [tblResultType](
     [Id] bigint constraint [PkResultType] primary key not null,
     [Name] nvarchar(255) not null,
     [IsWin] bit not null,
+    constraint [ResultType_Name_Unique] unique([Name])
     
 );
 create table [tblResult](
