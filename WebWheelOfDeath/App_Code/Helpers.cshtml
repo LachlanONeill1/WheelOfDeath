@@ -1,0 +1,108 @@
+﻿@using LibEntity.NetFramework
+
+
+
+@helper ExceptionHandler(Exception e, int timeoutDurationMs = 0)
+{
+    <div class="helpers-error" id="erorr_panel">
+        <label class="close-popup">&#10006;</label>
+        <pre>@e.Message</pre>
+        <script>
+
+            @if (timeoutDurationMs > 0)
+            {   
+                <text>
+                setTimeout(closeErrorPanel, @timeoutDurationMs);           
+                </text>
+            }
+
+            document.querySelector('#erorr_panel .close-popup').addEventListener('click', closeErrorPanel)
+
+            function closeErrorPanel() {
+                document.getElementById('error_panel').remove();
+            }
+        </script>
+    </div>
+}
+
+@helper ListBox(List<IEntity> list, long defaultId, string elementName, string prompt, string elementId = "", byte size = 1, string classList = "")
+{
+    if (string.IsNullOrWhiteSpace(elementId))
+    {
+        elementId = "id-" + new Random().Next().ToString();
+    }
+    <label for="@elementId">@prompt </label>
+    <select name="@elementName" id="@elementId" size="@size" class="@classList">
+        @foreach (IEntity entity in list)
+        {
+            if (defaultId == entity.Id)
+            {
+                <option value="@entity.Id" selected="selected">@entity</option>
+            }
+            else
+            {
+                <option value="@entity.Id">@entity</option>
+            }
+        }
+    </select>
+}
+
+@helper LabelInput(List<IEntity> list, long defaultId, string inputType, string inputName, string classList = "")
+{
+    Random rand = new Random();
+    foreach (IEntity entity in list)
+    {
+        string elementId = "id-radio-" + rand.Next().ToString();
+        if (defaultId == entity.Id)
+        {
+            <label for="@elementId">@entity</label>
+            <input type="@inputType" id="@elementId" name="@inputName" value="@entity.Id" checked="checked" />
+        }
+        else
+        {
+            <label for="@elementId">@entity</label>
+            <input type="@inputType" id="@elementId" name="@inputName" value="@entity.Id" />
+        }
+    }
+}
+
+<style>
+    .helpers-error {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #fff;
+        color: #333;
+        padding: 1rem 1.5rem;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        font-size: 1rem;
+        z-index: 9999;
+        max-width: 90%;
+        min-width: 300px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+        .helpers-error label.close-popup {
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #888;
+            transition: color 0.2s ease;
+        }
+
+            .helpers-error label.close-popup:hover {
+                color: #000;
+            }
+
+        .helpers-error pre {
+            margin: 0;
+            font-family: inherit;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+</style>

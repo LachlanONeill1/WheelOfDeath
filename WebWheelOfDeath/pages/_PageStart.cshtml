@@ -1,0 +1,11 @@
+﻿@using LibWheelOfDeath
+@using Assessment
+@using System.Data.SqlClient;
+@using LibEntity.NetFramework
+@using System.Data;
+@{
+    LibWebWheelOfDeath.Model.Initialize();
+
+    CPlayer player = (CPlayer)Session["LoggedUser"] ?? new CPlayer();
+    Session["LoggedPlayer"] = player;
+}
