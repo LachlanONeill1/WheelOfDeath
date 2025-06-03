@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Net.Sockets;
 using System.Runtime.ConstrainedExecution;
 namespace Assessment
 {
@@ -28,7 +29,7 @@ namespace Assessment
             get { return _password; }
             set { _password = value; }
         }
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; }
 
         #endregion
 
@@ -36,6 +37,7 @@ namespace Assessment
 
         public new virtual void Create()
         {
+            Parameters.Clear();
             Validate();
             CommandText = $@"insert into [tblAccount]
                         (
@@ -60,8 +62,11 @@ namespace Assessment
             base.Create(true);
         }
 
+       
+
         public override int Update()
         {
+            Parameters.Clear();
             if (Password.Length >0)
             {
                 CommandText = $@"Update
@@ -74,27 +79,38 @@ namespace Assessment
                             where
                                 [Id] = @pId
                                 ";
+                Parameters.AddWithValue("@pFirstname", FirstName);
+                Parameters.AddWithValue("@pLastname", LastName);
                 Parameters.AddWithValue("@pPassword", Password);
+            }
+            else if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName))
+            {
+                CommandText = $@"Update [tblAccount]
+                         set [Firstname] = @pFirstname,
+                             [LastName] = @pLastname,
+                             [IsActive] = @pIsActive
+                         where [Id] = @pId";
+                Parameters.AddWithValue("@pFirstname", FirstName);
+                Parameters.AddWithValue("@pLastname", LastName);
             }
             else
             {
-                CommandText = $@"Update
-                                [tblAccount]
-                            set
-                                [Firstname] = @pFirstname,
-                                [LastName] = @pLastname,
-                                [IsActive] = @pIsActive
-                            where
-                                [Id] = @pId";
+                CommandText = $@"Update [tblAccount]
+                         set [IsActive] = @pIsActive
+                         where [Id] = @pId";
             }
+
             Parameters.AddWithValue("@pId", Id);
-            Parameters.AddWithValue("@pFirstname", FirstName);
-            Parameters.AddWithValue("@pLastname", LastName);
             Parameters.AddWithValue("@pIsActive", IsActive);
             return base.Update();
         }
 
-        
+      
+
+        public void GetAccount(long id)
+        {
+            Read(id);
+        }
 
         public override IEntity Populate(SqlDataReader reader, IEntity entity = null)
         {
@@ -111,28 +127,37 @@ namespace Assessment
         public override void Validate()
         {
             string message = "";
-            if (!PasswordValidate(out string passwordMessage))
+            if (!string.IsNullOrEmpty(Password))
             {
-                message += passwordMessage;
+                if (!PasswordValidate(out string passwordMessage))
+                {
+                    message += passwordMessage;
+                }
             }
             if (Id < 0L)
             {
                 message += $"Id must be set.{Environment.NewLine}";
             }
 
-            if (FirstName.Length < 2 || FirstName.Length > 100)
+            if (!string.IsNullOrWhiteSpace(FirstName))
             {
-                message += $"Firstname min length 2, max length 100{Environment.NewLine}";
+                if (FirstName.Length < 2 || FirstName.Length > 100)
+                {
+                    message += $"Firstname min length 2, max length 100{Environment.NewLine}";
+                }
             }
 
-            if (LastName.Length < 2 || LastName.Length > 100)
+            if (!string.IsNullOrWhiteSpace(LastName))
             {
-                message += $"Lastname min length 2, max length 100{Environment.NewLine}";
+                if (LastName.Length < 2 || LastName.Length > 100)
+                {
+                    message += $"Lastname min length 2, max length 100{Environment.NewLine}";
+                }
             }
-            if (IsActive == false)
-            {
-                message += $"Account must be active{Environment.NewLine}";
-            }
+            //if (IsActive == false)
+            //{
+            //    message += $"Account must be active{Environment.NewLine}";
+            //}
             
             if (message.Length > 0)
             {
@@ -160,11 +185,6 @@ namespace Assessment
             int lowers = 0;
             int uppers = 0;
             int special = 0;
-
-            if (Password.Length < 12)
-            {
-                message += $"Password must be atleast 12 characters minimum{Environment.NewLine}";
-            }
 
             foreach (char nextChar in Password)
             {
@@ -205,7 +225,7 @@ namespace Assessment
         }
         public override string ToString()
         {
-            return $"Id: {Id}, FirstName: {FirstName}, LastName: {LastName}";
+            return $"Id: {Id}, FirstName: {FirstName}, LastName: {LastName}, IsActive: {IsActive}";
         }
 
 

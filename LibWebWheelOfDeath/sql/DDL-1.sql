@@ -50,12 +50,14 @@ create table [tblGame](
     [MinBalloons] smallint not null,
     [MaxBalloons] smallint not null,
     [MaxMisses] bigint not null,
-    [MaxDuration] smallint not null,
+    [MaxDuration] bigint not null,
     [GameDateTime] datetime not null,
     [MaxThrows] smallint not null,
     [IsActive] bit not null constraint [Game-IsActive-Default-True] default(1),
     constraint [Game_Name_Unique] unique([Name])
 );
+create index [idxFkAdminId] on [tblGame]([FkAdminId])
+create index [idxFkDifficultyId] on [tblGame]([FkDifficultyId])
 
 create table [tblResultType](
     [Id] bigint constraint [PkResultType] primary key not null,
@@ -78,7 +80,41 @@ create table [tblConfig](
 	[Id] bigint not null identity primary key,
 	[ResultsShown] bigint not null constraint[DefaultResultsShown] default (10) 
 );
+create index [idxFkGameId] on [tblResult]([FkGameId])
+create index [idxFkPlayerId] on [tblResult]([FkPlayerId])
+create index [idxFkResultTypeId] on [tblResult]([FkResultTypeId])
 
+
+select 
+    count(*) as ResultCount,
+    R.[FkPlayerId], 
+    R.[Duration], 
+    R.[Misses], 
+    R.[BalloonsPopped], 
+    G.[Name] as GameName,
+    P.[Username] as PlayerName
+from tblResult R
+inner join tblGame G on R.FkGameId = G.Id
+inner join tblPlayer P on R.FkPlayerId = P.FkAccountId
+group by 
+    R.[FkPlayerId], 
+    R.[Duration], 
+    R.[Misses], 
+    R.[BalloonsPopped], 
+    G.[Name], 
+    P.[Username];
+
+
+
+SELECT 
+    A.Id,
+    P.Username,
+    A.FirstName,
+    A.LastName,
+    A.IsActive
+FROM tblPlayer P
+inner join tblAccount A ON P.FkAccountId = a.Id
+ORDER BY P.Username;
 
 
 

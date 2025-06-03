@@ -103,8 +103,9 @@ export class CWheelGame extends CTimer {
 
             if (this.isRunning) {
                 this.#gameOver(EnumGameStatus.Stopped);
-            } else if (this.#showPopups) {
-                this.start()
+            //} else if (this.#showPopups) {
+            //    this.start()
+                //
             } else {              
                 this.start();            
             }
@@ -157,7 +158,7 @@ export class CWheelGame extends CTimer {
         this.#gameOver(EnumGameStatus.Timed_Out);
         this.#cleanupGame();
 
-        // https://pixabay.com/sound-effects/search/timeout/
+         https://pixabay.com/sound-effects/search/timeout/
         Util.playSoundFile('/audio/timeout.mp3');
     }
 
@@ -260,7 +261,7 @@ export class CWheelGame extends CTimer {
             this.#miss();
         } else {
             balloon.pop();
-            Util.playSoundFile('audio/balloon-burst.mp3');
+            Util.playSoundFile('~/audio/balloon-burst.mp3');
 
             this.#useKnife();
             this.#updateScore();

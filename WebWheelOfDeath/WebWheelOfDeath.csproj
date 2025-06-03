@@ -116,6 +116,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="admin_pages\AdminInterface.cshtml" />
+    <None Include="admin_pages\_PageStart.cshtml" />
     <Content Include="audio\Arrow_on_wood.mp3" />
     <Content Include="audio\Arrow_on_wood.wav" />
     <Content Include="audio\balloon-burst.mp3" />
@@ -139,8 +141,7 @@
     <Content Include="js\lib\Utilities.js" />
     <Content Include="App_Code\Helpers.cshtml" />
     <None Include="pages\index.cshtml" />
-    <None Include="pages\HtmlPage1.cshtml" />
-    <None Include="Shared\_AppStart.cshtml" />
+    <None Include="admin_pages\LoginPage.cshtml" />
     <Content Include="pics\balloon1.png" />
     <Content Include="pics\balloon2.png" />
     <Content Include="pics\balloon3.png" />
@@ -198,6 +199,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\LibEntity.NetFramework\LibEntity.NetFramework\LibEntity.NetFramework\LibEntity.NetFramework.csproj">
+      <Project>{9ea840e0-4511-4823-9c2f-b8d5dcefd448}</Project>
+      <Name>LibEntity.NetFramework</Name>
+    </ProjectReference>
     <ProjectReference Include="..\LibWebWheelOfDeath\LibWebWheelOfDeath.csproj">
       <Project>{9060c665-bd9e-47fb-b549-bdf6bbf5cd91}</Project>
       <Name>LibWebWheelOfDeath</Name>

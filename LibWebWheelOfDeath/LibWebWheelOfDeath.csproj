@@ -45,6 +45,7 @@
     <Compile Include="CAdmin.cs" />
     <Compile Include="CAdminType.cs" />
     <Compile Include="CBalloonModel.cs" />
+    <Compile Include="CConfig.cs" />
     <Compile Include="CDifficulty.cs" />
     <Compile Include="CGame.cs" />
     <Compile Include="CPlayer.cs" />

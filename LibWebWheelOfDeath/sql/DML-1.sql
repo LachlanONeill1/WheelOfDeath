@@ -83,6 +83,12 @@ insert into [tblResultType] ([Id],[Name], [IsWin]) values
 0
 );
 
+insert into [tblResult] ([FkGameId], [FkPlayerId], [Duration], [Misses], [BalloonsPopped], [FkResultTypeId]) values
+(1, 3, 100, 2, 8, 1),
+(1, 4, 110, 3, 6, 2),
+(2, 3, 85, 1, 10, 1),
+(2, 4, 90, 2, 9, 3);
+
 select
 	tblPlayer.Username, tblAccount.FirstName, tblAccount.LastName, tblAccount.Password
 from
@@ -110,6 +116,19 @@ order by
 select G.MaxDuration, G.MaxBalloons, G.MaxMisses, G.MaxThrows
 from tblGame G
 where G.Id = 3
+
+select R.Duration,
+	   R.Misses,
+	   R.BalloonsPopped,
+	   RT.Name,
+	   RT.IsWin,
+       P.Username
+from [tblResultType] RT
+inner join
+[tblResult] R on RT.Id = R.FkResultTypeId
+inner join
+[tblPlayer] P on R.FkPlayerId = P.Username;
+
 ----------AI DATA --------------------
 	
 

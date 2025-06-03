@@ -34,7 +34,6 @@
     string queryId = queryString.Get("Id");
     #endregion
 
-
     CPlayer player;
 
     if (Session["LoggedPlayer"] != null)
@@ -43,7 +42,6 @@
         if (player.FkAccountId == 0 && Session["PlayerAccountId"] != null)
         {
             player.FkAccountId = (long)Session["PlayerAccountId"];
-
         }
     }
     else
@@ -55,8 +53,6 @@
     if (Session["PlayerAccountId"] != null)
     {
         player.FkAccountId = (long)Session["PlayerAccountId"];
-
-
     }
 
     if (player.FkAccountId > 0L)
@@ -73,7 +69,7 @@
         if (Rows.Length > 0)
         {
             DataRow gameRow = Rows[0];
-            duration = Convert.ToInt64(gameRow["MaxDuration"]) * 1000;
+            duration = Convert.ToInt64(gameRow["MaxDuration"]) * 100;
             min_balloons = Convert.ToInt16(gameRow["MinBalloons"]);
             max_balloons = Convert.ToInt16(gameRow["MaxBalloons"]);
             max_throws = Convert.ToInt16(gameRow["MaxThrows"]);
@@ -91,11 +87,9 @@
             Session["PlayerUsername"] = userName;
             Session["PlayerAccountId"] = player.FkAccountId;
             loginModalClass = "hidden";
-
         }
         catch (Exception E)
         {
-
             @Helpers.ExceptionHandler(E, 5000)
         }
     }
@@ -103,7 +97,6 @@
     {
         try
         {
-
             firstName = Request["txtPlayerFirstName"];
             lastName = Request["txtPlayerLastName"];
             userName = Request["txtUsername"];
@@ -114,11 +107,7 @@
             player.Create();
             Session["LoggedPlayer"] = player;
             Session["PlayerAccountId"] = player.FkAccountId;
-            player.FirstName = "";
-            player.LastName = "";
-            player.Username = "";
-            player.Password = "";
-            player.FkAccountId = 0;
+            player.Clear();
 
         }
         catch (Exception E)
@@ -126,7 +115,6 @@
             @Helpers.ExceptionHandler(E, 5000)
             loginModalClass = "hidden";
             signupModalClass = "";
-
         }
     }
     if (Request["btnLogOut"] != null)
@@ -136,14 +124,11 @@
         Session["PlayerAccountId"] = null;
         Session["PlayerUsername"] = null;
         loginModalClass = "";
-        player.FkAccountId = 0;
+        player.Clear();
 
         Response.Redirect("~/pages/index.cshtml");
         return;
     }
-
-
-
 }
 
 <body class="shadow-text">
@@ -154,8 +139,54 @@
              height="159"
              width="667" />
     </header>
-
+ 
     <main>
+        <form method="post" style="display: flex; z-index: 100;">
+            <button id="btnLogOut" name="btnLogOut" type="submit" class="ornate">Logout</button>
+        </form>
+
+        <form method="post" style="display: flex; z-index: 100;">
+            <button id="btnEditAccount" name="btnEditAccount" type="submit" class="ornate">Edit Account</button>
+        </form>
+        <button id="btnOpenLeaderboard" name="OpenLeaderboard" type="button" class="ornate">Leaderboard</button>
+        <div id="modal-leaderboard-id" class="modal-canvas hidden">
+            <div class="main-panel modal-leaderboard">
+                <span class="close-popup" id="btnCloseLeaderboard">&#10006;</span>
+                <h2>Leaderboard</h2>
+                <table class="Leaderboard">
+                    @{
+                        DataTable leaderboard = LibWebWheelOfDeath.CQuery.LeaderboardQuery.Fetch<DataTable>();
+                    }
+                    <thead>
+                        <tr>
+                            @foreach (DataColumn column in leaderboard.Columns)
+                            {
+                                <th>@column.ColumnName</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (leaderboard.Rows.Count == 0)
+                        {
+                            <tr><td colspan="4">No records found.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (DataRow row in leaderboard.Rows)
+                            {
+                                <tr>
+                                    @foreach (var item in row.ItemArray)
+                                    {
+                                        <td>@item</td>
+                                    }
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div>
             <div id="knife-gallery"></div>
 
@@ -187,17 +218,11 @@
                  height="2669"
                  width="1648" />
         </div>
-        <form method="post" style="position: absolute; top: 20px; right: 1500px; z-index: 100;">
-            <button id="btnLogOut" name="btnLogOut" type="submit" class="ornate">Logout</button>
 
-        </form>
-        <form method="post" style="position: absolute; top: 20px; right: 1400px; z-index: 100;">
-            <button id="btnEditAccount" name="btnEditAccount" type="submit" class="ornate">Edit Account</button>
-        </form>
+
 
         <button id="btnSelectGame" name="btnSelectGame" type="button" class="ornate rounded">Select Game</button>
-        <button id="btnStartStop" name="btnStartStop" type="submit" class="ornate rounded">Start</button>
-
+        <button style="margin-top: 6px" id="btnStartStop" name="btnStartStop" type="submit" class="ornate rounded">Start</button>
 
         <div class="time-panel" id="time-panel-1">
 
@@ -384,28 +409,23 @@
 
             import { CWheelGame } from '../js/CWheelGame.js';
             import { CMessageModal } from '../js/CAppModals.js';
-            
+
             let _game;
-            _game = new CWheelGame(@duration, @min_balloons, @max_balloons, @max_throws, false);
+        _game = new CWheelGame(@duration, @min_balloons, @max_balloons, @max_throws, false);
+            
             try {
-                document.getElementById('btnStartStop').addEventListener('click', function (event) {
-                    event.stopPropagation();
+
                     const urlParams = new URLSearchParams(window.location.search);
                     const gameId = urlParams.get('Id');
                     if (!gameId) {
-                        
-                        event.preventDefault();
                         document.getElementById('btnStartStop').classList.add('hidden');
-                        new CMessageModal('#modal-message-id').display("Please select a game difficulty first!", false, 5000);
-                        
-                        document.getElementById('modal-difficulty-id').classList.remove('hidden');
-                    }
 
+                    }
                     else {
                         document.getElementById('modal-difficulty-id').classList.add('hidden')
                         document.getElementById('btnStartStop').classList.remove('hidden')
                     }
-                });
+
                 document.getElementById('btnLogOut').addEventListener('click', function (event) {
                     const url = new URL(window.location.href);
                     url.searchParams.delete('Id');
@@ -425,6 +445,13 @@
                 document.getElementById('CloseOptions').addEventListener('click', function (event) {
                     document.getElementById('modal-difficulty-id').classList.add('hidden');
                 })
+                document.getElementById('btnOpenLeaderboard').addEventListener('click', () => {
+                    document.getElementById('modal-leaderboard-id').classList.remove('hidden');
+                });
+
+                document.getElementById('btnCloseLeaderboard').addEventListener('click', () => {
+                    document.getElementById('modal-leaderboard-id').classList.add('hidden');
+                });
 
         const difficultyModal = document.getElementById('modal-difficulty-id')
         document.getElementById('modal-button').addEventListener('click', function (event) {
@@ -435,17 +462,22 @@
 
         document.getElementById('modal-difficulty-id').addEventListener('submit', event => {
             event.preventDefault();
-            var selectedGameId = document.getElementById('lstDifficulty').value;
-            var baseUrl = window.location.href.split('?')[0];
+            let selectedGameId = document.getElementById('lstDifficulty').value;
+            let baseUrl = window.location.href.split('?')[0];
             window.location.href = baseUrl + '?Id=' + selectedGameId;
-    })
+        })
+
+                let btnSelectGame = document.getElementById('btnSelectGame');
+ 
+                btnSelectGame.addEventListener('click',  event => {                   
+                        event.stopPropagation();                
+                })
 
         console.log("Game settings from server:");
         console.log("Duration: @duration");
         console.log("Min balloons: @min_balloons");
         console.log("Max balloons: @max_balloons");
         console.log("Max throws: @max_throws");
-
 
         document.addEventListener('game-over', event => {
         console.log("Status: ${event.detail.gameStatus} Elapsed: ${event.detail.elapsed}");
@@ -459,7 +491,46 @@
     </script>
 </body>
 <style>
-    .close-popup{
+    #btnOpenLeaderboard{
+        top: 20%;
+    }
+
+    .Leaderboard {
+        color: #333;
+        text-shadow: none;
+        text-align: center;
+    }
+    .modal-leaderboard {
+        background: #fff;
+        padding: 20px;
+        border-radius: 15px;
+        max-height: 80%;
+        overflow-y: auto;
+        
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+    .Leaderboard th,
+    .Leaderboard td {
+        border: 1px solid #ccc;
+        padding: 6px 8px;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .Leaderboard th {
+        background-color: #f1f1f1;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .Leaderboard tr:nth-child(even) {
+        background-color: #fafafa;
+    }
+
+    .Leaderboard tr:hover {
+        background-color: #eef4ff;
+    }
+    .close-popup {
         cursor: pointer;
     }
     select.Difficulties {
@@ -535,7 +606,7 @@
         }
 
     #btnLogOut {
-        position: absolute;
+        display: flex;
         top: 20px;
         right: 20px;
         z-index: 100;
@@ -562,9 +633,9 @@
         }
 
     #btnEditAccount {
-        position: absolute;
-        top: 10px;
-        right: 20px;
+        
+        top: 3px;
+        right: 40px;
         z-index: 100;
         background-image: linear-gradient(to bottom right, darkred, #990000);
         color: white;

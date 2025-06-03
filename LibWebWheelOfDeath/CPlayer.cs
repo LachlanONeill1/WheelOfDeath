@@ -164,6 +164,15 @@ namespace LibWheelOfDeath
             }
             
         }
+        public void Clear()
+        {
+            this.FirstName = string.Empty;
+            this.LastName = string.Empty;
+            this.FkAccountId = 0L;
+            this.Password = string.Empty;
+            this.Username = string.Empty;
+        }
+
         public override string ToString()
         {
             return $"Id {Id}, FkAccountId {FkAccountId}, Username {Username}, Password {Password}";

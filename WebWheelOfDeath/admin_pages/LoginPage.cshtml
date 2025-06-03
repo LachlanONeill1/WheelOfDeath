@@ -1,0 +1,90 @@
+﻿@using LibWebWheelOfDeath
+@using LibWheelOfDeath;
+@using LibEntity.NetFramework;
+@using Assessment;
+@{
+    Page.Title = "Administrator";
+    #region declarations
+    CAdmin admin;
+    string firstName = string.Empty;
+    string lastName = string.Empty;
+    string userName = string.Empty;
+    #endregion
+
+    if (Request["btnLogin"] != null)
+    {
+        try
+        {
+            userName = Request["txtUsername"];
+            string password = Request["txtPassword"];
+            admin = CAdmin.Login(userName, password);
+            Session["LoggedPlayer"] = admin;
+            Session["AdminAccountId"] = admin.FkAccountId;
+            Response.Redirect("~/admin_pages/AdminInterface.cshtml");
+            return;
+
+        }
+        catch (Exception E)
+        {
+
+            @Helpers.ExceptionHandler(E, 5000);
+        }
+    }
+
+
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    <main>
+        <h1>Wheel Of Death Administrator</h1>
+        <form id="login-form" method="post">
+            <fieldset>
+                <legend>Administrator Login</legend>
+
+                <fieldset class="borderless">
+                    <label for="txtUsername">Username:</label>
+                    <input type="text"
+                           name="txtUsername"
+                           id="txtUsername"
+                           placeholder="[Enter Username]"
+                           required="required" />
+                </fieldset>
+
+                <fieldset class="borderless">
+                    <label for="txtPassword">Password:</label>
+                    <input type="text"
+                           name="txtPassword"
+                           id="txtPassword"
+                           placeholder="[Enter Password]"
+                           required="required" />
+                </fieldset>
+                <button type="submit" name="btnLogin" id="btnLogin" class="ornate">Login</button>
+            </fieldset>
+        </form>
+    </main>
+</body>
+</html>
+
+<style>
+    body {
+        background-color: crimson;
+    }
+
+    #login-form {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    form{
+        text-decoration: none;
+    }
+    h1{
+        text-align: center;
+    }
+</style>

@@ -23,11 +23,39 @@ namespace LibWheelOfDeath
         public long FkAdminTypeId { get; set; } = 0L;
 
         public string Username { get; set; } = string.Empty;
-        
+
         #endregion
-   
+
 
         #region CRUDS
+
+        public static CAdmin Login(string userName, string password)
+        {
+            //if (string.IsNullOrWhiteSpace(firstName)){ throw new CEntityException("First Name must be supplied"); }
+            //if (string.IsNullOrWhiteSpace(lastName)) { throw new CEntityException("Last Name must be supplied"); }
+            if (string.IsNullOrWhiteSpace(userName)) { throw new CEntityException("Username must be supplied"); }
+            if (string.IsNullOrWhiteSpace(password)) { throw new CEntityException("Password must be supplied"); }
+            if (password.Length < 1) { throw new CEntityException("Password must be supplied"); }
+
+            CAdmin userSearch = new CAdmin()
+            {
+                Username = userName,
+                Password = password
+            };
+
+            List<IEntity> list = userSearch.Search();
+
+            if (list.Count > 0)
+            {
+                return (CAdmin)list.FirstOrDefault();
+            }
+            else
+            {
+                throw new CEntityException("Login failed");
+            }
+
+
+        }
         public override void Create()
         {
           
@@ -123,6 +151,14 @@ namespace LibWheelOfDeath
             }
         }
 
-       
+        public void Clear()
+        {
+            this.FirstName = string.Empty;
+            this.LastName = string.Empty;
+            this.FkAccountId = 0L;
+            this.Password = string.Empty;
+            this.Username = string.Empty;
+            this.FkAdminTypeId = 0L;
+        }
     }
 }

@@ -1,0 +1,481 @@
+﻿@using LibWheelOfDeath;
+@using Assessment;
+@using System.Data.SqlClient;
+@using LibEntity.NetFramework;
+@using System.Data;
+@using System.Threading;
+@using LibWebWheelOfDeath;
+@{
+
+    CGame game = new CGame();
+    CDifficulty difficulty = new CDifficulty();
+
+    #region Game
+    if (Request["PostGameData"] != null)
+    {
+        try
+        {
+            game.FkAdminId = (long)Session["AdminAccountId"];
+            game.FkDifficultyId = Convert.ToInt64(Request["lstDifficulties"]);
+            game.Name = Request["GameName"];
+            game.MaxDuration = Convert.ToInt64(Request["GameDuration"]);
+            game.MaxThrows = Convert.ToInt16(Request["GameMaxThrows"]);
+            game.MaxMisses = Convert.ToInt16(Request["GameMaxMisses"]);
+            game.MinBalloons = Convert.ToInt16(Request["GameMinBalloons"]);
+            game.MaxBalloons = Convert.ToInt16(Request["GameMaxBalloons"]);
+            game.Create();
+        }
+        catch (Exception E)
+        {
+            @Helpers.ExceptionHandler(E, 5000);
+        }
+    }
+
+    #endregion
+
+    if (Request["PostDifficultyData"] != null)
+    {
+        try
+        {
+            difficulty.DifficultyType = Request["DifficultyName"];
+            difficulty.FkAdminId = (long)Session["AdminAccountId"];
+            difficulty.Create();
+        }
+        catch (Exception E)
+        {
+            @Helpers.ExceptionHandler(E, 5000);
+        }
+    }
+
+    if (Request["CreateAdminType"] != null)
+    {
+        CAdminType newAdminType = new CAdminType();
+        newAdminType.Name = Request["AdminTypeName"];
+        newAdminType.Create();
+    }
+
+    if (Request["UpdateTopX"] != null)
+    {
+        try
+        {
+            CConfig config = new CConfig();
+            config.ResultsShown = Convert.ToInt64(Request["TopX"]);
+            config.Update();
+        }
+        catch (Exception E) {
+
+
+            @Helpers.ExceptionHandler(E, 5000);
+        }
+
+    }
+
+    #region Users
+
+    if (Request["ToggleUserStatus"] != null)
+    {
+        try
+        {
+            CAccount account = new CAccount();
+            long Id = Convert.ToInt64(Request["UserId"]);
+            account.GetAccount(Id);
+            account.Password = string.Empty;
+            if (account.IsActive == true)
+            {
+                account.IsActive = false;
+                account.Update();
+            }
+            else
+            {
+                account.IsActive = true;
+                account.Update();
+            }
+        }
+        catch (Exception E)
+        {
+            @Helpers.ExceptionHandler(E, 5000);
+        }
+    }
+    #endregion
+    if (Request["btnLogOut"] != null)
+    {
+        CAdmin admin = new CAdmin();
+        admin.Clear();
+        Session["AdminAccountId"] = null;
+        Session["LoggedPlayer"] = null;
+
+        Response.Redirect("~/pages/LoginPage.cshtml");
+        return;
+    }
+
+    if (Request["PostAdminAccount"] != null)
+    {
+        try
+        {
+            CAdmin admin = new CAdmin();
+            admin.FirstName = Request["AdminFirstName"];
+            admin.LastName = Request["AdminLastName"];
+            admin.Password = Request["AdminPassword"];
+            admin.Username = Request["AdminUsername"];
+            admin.Create();
+        }
+        catch (Exception E)
+        {
+            @Helpers.ExceptionHandler(E, 5000);
+        }
+    }
+}
+<!DOCTYPE html>
+@*
+    -
+    Game Creation | DONE
+    -
+    Difficulty Creation | DONE
+    -
+    Admin Account Creation(super only) | DONE
+    -
+    Account deactivation/Reactivation | DONE
+    -
+    Create New Admin Types(super only) | Done
+    -
+    Change the hall of fame leader topX
+*@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+
+
+    <h1>Administrator Control</h1>
+    <form method="post">
+        <button style="background-color: #B00917; " name="btnLogOut" type="submit">Log Out</button>
+    </form>
+    
+    <main>
+        <div class="User-Management-Wrapper">
+            <h2>Manage Users</h2>
+
+            <form class="user-filters" method="post">
+                <input type="text" name="SearchUsername" placeholder="Username" />
+                <input type="text" name="SearchFirstName" placeholder="First Name" />
+                <input type="text" name="SearchLastName" placeholder="Last Name" />
+                <div class="user-controls">
+                    <button type="submit" name="FilterUsers">Filter</button>
+                    <button type="submit" name="btnReset">Reset</button>
+                    <button type="submit" name="ToggleActiveStatus">Show Active / Inactive</button>
+                </div>
+            </form>
+            @{
+                bool tracker = false;
+                DataTable players;
+                if (Request["btnReset"] != null)
+                {
+                    players = CQuery.UserFiler.Fetch<DataTable>();
+                    tracker = false;
+                }
+                if (Request["FilterUsers"] != null)
+                {
+
+                    string searchUsername = Request["SearchUsername"];
+                    string searchFirstName = Request["SearchFirstName"];
+                    string searchLastName = Request["SearchLastName"];
+                    players = (DataTable)CQuery.FilterQuery(searchUsername, searchFirstName, searchLastName);
+                    tracker = true;
+                }
+                else
+                {
+                    players = CQuery.UserFiler.Fetch<DataTable>();
+                    tracker = false;
+                }
+            }
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    @foreach (DataRow row in players.Rows)
+                    {
+                        long userId;
+                        if (tracker == true)
+                        {
+                            userId = row.Field<long>("FkAccountId");
+                        }
+                        else
+                        {
+                            userId = row.Field<long>("Id");
+                        }
+
+                        string username = row.Field<string>("Username");
+                        string firstName = row.Field<string>("FirstName");
+                        string lastName = row.Field<string>("LastName");
+                        bool isActive = row.Field<bool>("IsActive");
+                        string status = isActive ? "Active" : "Inactive";
+                        string actionText = isActive ? "Deactivate" : "Reactivate";
+                        <tr>
+                            <td>@username</td>
+                            <td>@firstName</td>
+                            <td>@lastName</td>
+                            <td>@status</td>
+                            <td>
+                                <form method="post">
+                                    <input type="hidden" name="UserId" value="@userId" />
+                                    <button type="submit" class="btnChangeStatus" name="ToggleUserStatus">@actionText</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="Game-Creation-Wrapper">
+            <form method="post" class="game-form">
+                <fieldset>
+                    <legend>Enter a New Game</legend>
+                    <input type="text" required="required" name="GameName" placeholder="Enter Game Name" />
+                    <input type="text" required="required" name="GameDuration" placeholder="Enter Duration(Miliseconds)" />
+                    <input type="text" required="required" name="GameMaxThrows" placeholder="Enter MaxThrows" />
+                    <input type="text" required="required" name="GameMaxMisses" placeholder="Enter MaxMisses" />
+                    <input type="text" required="required" name="GameMinBalloons" placeholder="Enter MinBalloons" />
+                    <input type="text" required="required" name="GameMaxBalloons" placeholder="Enter MaxBalloons" />
+                    @{
+                        DataTable table = LibWebWheelOfDeath.CQuery.Difficulties.Fetch<DataTable>();
+                    }
+                    <select name="lstDifficulties">
+                        @{
+                            for (int i = 0; i < table.Rows.Count; i++)
+                            {
+                                DataRow row = table.Rows[i];
+                                string difficultyName = row.Field<string>("DifficultyType");
+                                long difficultyId = row.Field<long>("Id");
+                                <option value="@difficultyId">@difficultyName</option>
+                            }
+                        }
+                    </select>
+                    <button type="submit" name="PostGameData">Submit!</button>
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="Difficulty-Creation-Wrapper">
+            <form class="difficulty-form" method="post">
+                <fieldset>
+                    <legend>Enter a New Difficulty</legend>
+                    <input type="text" name="DifficultyName" placeholder="Enter Difficulty Name" />
+                    <button type="submit" name="PostDifficultyData" id="PostDifficultyData">Submit!</button>
+                </fieldset>
+            </form>
+        </div>
+
+
+        @*SUPER ADMIN ONLY*@
+        @if (Convert.ToInt64(Session["AdminAccountId"]) == 1)
+        {
+
+            <div class="Admin-Account-Creation-Wrapper">
+                <form class="admin-form" method="post">
+                    <fieldset>
+                        <legend>Create a New Admin Account</legend>
+                        <input type="text" required name="AdminFirstName" placeholder="Enter First Name" />
+                        <input type="text" required name="AdminLastName" placeholder="Enter Last Name" />
+                        <input type="text" required name="AdminUsername" placeholder="Enter Username" />
+                        <input type="password" required name="AdminPassword" placeholder="Enter Password" />
+                        @{
+                            DataTable admins = CQuery.Admins.Fetch<DataTable>();
+                        }
+                        <select name="AdminTypeId" required>
+                            @{
+                                for (int i = 0; i < admins.Rows.Count; i++)
+                                {
+                                    DataRow row = admins.Rows[i];
+                                    string adminTypeName = row.Field<string>("Name");
+                                    long adminTypeId = row.Field<long>("Id");
+                                    <option value="@adminTypeId">@adminTypeName</option>
+                                }
+                            }
+                        </select>
+                        <button type="submit" name="PostAdminAccount">Submit!</button>
+                    </fieldset>
+                </form>
+            </div>
+        }
+
+
+
+        <div class="Admin-Type-Creation-Wrapper">
+            <form class="admin-type-form" method="post">
+                <fieldset>
+                    <legend>Create Admin Type</legend>
+                    <input type="text" name="AdminTypeName" placeholder="Enter Admin Type Name" required />
+                    <button type="submit" name="CreateAdminType">Submit</button>
+                </fieldset>
+            </form>
+        </div>
+
+
+        <div class="TopX-Update-Wrapper">
+            <form class="topx-form" method="post">
+                <fieldset>
+                    <legend>Set Hall of Fame Top X</legend>
+                    <input type="number" name="TopX" placeholder="Enter Top X value" required min="1" />
+                    <button type="submit" name="UpdateTopX">Update</button>
+                </fieldset>
+            </form>
+        </div>
+
+
+    </main>
+</body>
+</html>
+<style>
+    h1 {
+        text-align: center;
+        color: #333;
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+    body {
+        background-color: crimson;
+        margin: 0;
+    }
+
+    main {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        align-items: center; 
+    }
+
+
+
+    .game-form,
+    .difficulty-form,
+    .admin-form,
+    .admin-type-form,
+    .topx-form,
+    .User-Management-Wrapper {
+        background-color: #ffffff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+        box-sizing: border-box;
+        width: 500px;
+    }
+
+    .admin-type-form,
+    .topx-form {
+        background-color: #ffffff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    fieldset {
+        border: none;
+        padding: 0;
+    }
+
+    legend {
+        font-weight: bold;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        color: #333;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+        display: block;
+        width: 100%;
+        margin-bottom: 15px;
+        padding: 10px;
+        font-size: 1em;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    button[type="submit"] {
+        background-color: crimson;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 1em;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        display: block;
+    }
+
+        button[type="submit"]:hover {
+            background-color: darkred;
+        }
+
+    .User-Management-Wrapper {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        padding: 20px;
+        width: 500px;
+        height: 600px;
+        overflow-y: auto;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+        .User-Management-Wrapper h2 {
+            margin-top: 0;
+        }
+
+    .user-filters input {
+        width: 48%;
+        margin: 5px 1%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .user-controls {
+        display: flex;
+        justify-content: space-between;
+        margin: 10px 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #eee;
+    }
+
+    .btnChangeStatus {
+        background-color: #555;
+    }
+
+    .btnChangeStatus:hover {
+        background-color: #333;
+    }
+</style>
